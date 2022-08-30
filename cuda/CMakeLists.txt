@@ -1,0 +1,16 @@
+cmake_minimum_required (VERSION 3.14)
+project (dspaces VERSION 2.0.2 LANGUAGES CXX CUDA)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set(INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/src")
+
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.17)
+    find_package(CUDAToolkit REQUIRED)
+else()
+    find_package(CUDA REQUIRED)
+endif()
+
+set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+
+add_subdirectory(src)
