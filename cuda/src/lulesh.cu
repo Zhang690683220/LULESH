@@ -83,6 +83,7 @@ Additional BSD Notice
 #include <unistd.h>
 
 #include "lulesh.h"
+#include "dspaces.h"
 
 /****************************************************/
 /* Allow flexibility for arithmetic representations */
@@ -4717,6 +4718,9 @@ int main(int argc, char *argv[])
 
   cuda_init(myRank);
 
+	dspaces_client_t dspaces_client = dspaces_CLIENT_NULL;
+	dspaces_init(myRank, &dspaces_client);
+
   /* assume cube subdomain geometry for now */
   Index_t nx = atoi(argv[2]);
 
@@ -4778,6 +4782,16 @@ int main(int argc, char *argv[])
    gettimeofday(&start, NULL) ;
 #endif
 
+	int output_interval = 100;
+	uint64_t lb[3] = {0};
+	uint64_t ub[3] = {0};
+	lb[0] = locDom->colLoc() * locDom->sizeX;
+	lb[1] = locDom->rowLoc() * locDom->sizeY;
+	lb[2] = locDom->planeLoc() * locDom->sizeZ;
+	ub[0] = lb[0] + locDom->sizeX - 1;
+	ub[1] = lb[1] + locDom->sizeY - 1;
+	ub[2] = lb[2] + locDom->sizeZ - 1;
+
   while(locDom->time_h < locDom->stoptime)
   {
     // this has been moved after computation of volume forces to hide launch latencies
@@ -4792,6 +4806,13 @@ int main(int argc, char *argv[])
 	 printf("cycle = %d, time = %e, dt=%e\n", its+1, double(locDom->time_h), double(locDom->deltatime_h) ) ;
     #endif
     its++;
+		if(its % output_interval == 0) {
+			fprintf(stdout, "Rank %d: lb = {%zu, %zu, %zu}, ub = {%zu, %zu, %zu}\n", myRank,
+											 lb[0], lb[1], lb[2], ub[0], ub[1], ub[2]);
+			dspaces_cuda_put(dspaces_client, "energy", its, sizeof(Real_t), 3, lb, ub, locDom->e.raw());
+			dspaces_cuda_put(dspaces_client, "pressure", its, sizeof(Real_t), 3, lb, ub, locDom->p.raw());
+			dspaces_cuda_put(dspaces_client, "mass", its, sizeof(Real_t), 3, lb, ub, locDom->elemMass.raw());
+		}
     if (its == num_iters) break;
   }
 
@@ -4825,7 +4846,7 @@ int main(int argc, char *argv[])
   DumpDomain(locDom) ;
 #endif
   cudaDeviceReset();
-
+		dspaces_fini(dspaces_client);
 #if USE_MPI
    MPI_Finalize() ;
 #endif
