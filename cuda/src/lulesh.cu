@@ -4783,6 +4783,8 @@ int main(int argc, char *argv[])
 #endif
 
 	int output_interval = 100;
+	int output_step = 10;
+	int output_count = 0;
 	uint64_t lb[3] = {0};
 	uint64_t ub[3] = {0};
 	lb[0] = locDom->colLoc() * locDom->sizeX;
@@ -4812,6 +4814,10 @@ int main(int argc, char *argv[])
 			dspaces_cuda_put(dspaces_client, "energy", its, sizeof(Real_t), 3, lb, ub, locDom->e.raw());
 			dspaces_cuda_put(dspaces_client, "pressure", its, sizeof(Real_t), 3, lb, ub, locDom->p.raw());
 			dspaces_cuda_put(dspaces_client, "mass", its, sizeof(Real_t), 3, lb, ub, locDom->elemMass.raw());
+			output_count++;
+			if(output_count == output_step) {
+				break;
+			}
 		}
     if (its == num_iters) break;
   }
