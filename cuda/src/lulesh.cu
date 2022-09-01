@@ -84,6 +84,8 @@ Additional BSD Notice
 
 #include "lulesh.h"
 #include "dspaces.h"
+#include "timer.hpp"
+#include <fstream>
 
 /****************************************************/
 /* Allow flexibility for arithmetic representations */
@@ -4794,6 +4796,19 @@ int main(int argc, char *argv[])
 	ub[1] = lb[1] + locDom->sizeY - 1;
 	ub[2] = lb[2] + locDom->sizeZ - 1;
 
+	fprintf(stdout, "Rank %d: lb = {%zu, %zu, %zu}, ub = {%zu, %zu, %zu}\n", myRank,
+											 lb[0], lb[1], lb[2], ub[0], ub[1], ub[2]);
+
+	std::ofstream log;
+  double* avg_put = nullptr;
+  double total_avg = 0;
+
+	if(myRank == 0) {
+		avg_put = (double*) malloc(sizeof(double)*output_step);
+		log.open("lulesh_dspaces.log", std::ofstream::out | std::ofstream::trunc);
+		log << "step,put_ms" << std::endl;
+}
+
   while(locDom->time_h < locDom->stoptime)
   {
     // this has been moved after computation of volume forces to hide launch latencies
@@ -4809,12 +4824,29 @@ int main(int argc, char *argv[])
     #endif
     its++;
 		if(its % output_interval == 0) {
-			fprintf(stdout, "Rank %d: lb = {%zu, %zu, %zu}, ub = {%zu, %zu, %zu}\n", myRank,
-											 lb[0], lb[1], lb[2], ub[0], ub[1], ub[2]);
+			Timer timer_put;
+      timer_put.start();
 			dspaces_cuda_put(dspaces_client, "energy", its, sizeof(Real_t), 3, lb, ub, locDom->e.raw());
 			dspaces_cuda_put(dspaces_client, "pressure", its, sizeof(Real_t), 3, lb, ub, locDom->p.raw());
 			dspaces_cuda_put(dspaces_client, "mass", its, sizeof(Real_t), 3, lb, ub, locDom->elemMass.raw());
+			double time_put = timer_put.stop();
 			output_count++;
+
+      double *avg_time_put = nullptr;
+      if(myRank == 0) {
+        avg_time_put = (double*) malloc(sizeof(double)*numRanks);
+      }
+			MPI_Gather(&time_put, 1, MPI_DOUBLE, avg_time_put, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+			if(myRank == 0) {
+				for(int i=0; i<numRanks; i++) {
+						avg_put[output_count-1] += avg_time_put[i];
+				}
+				avg_put[output_count-1] /= numRanks;
+				log << its << "," << avg_put[output_count-1] << std::endl;
+				total_avg += avg_put[output_count-1];
+				free(avg_time_put);
+			}
 			if(output_count == output_step) {
 				break;
 			}
@@ -4852,7 +4884,16 @@ int main(int argc, char *argv[])
   DumpDomain(locDom) ;
 #endif
   cudaDeviceReset();
-		dspaces_fini(dspaces_client);
+
+	if(myRank == 0) {
+		free(avg_put);
+		total_avg /= output_step;
+		log << "Total" << "," << total_avg << std::endl;
+		log.close();
+		std::cout<<"Writer sending kill signal to server."<<std::endl;
+		dspaces_kill(dspaces_client);
+	}
+	dspaces_fini(dspaces_client);
 #if USE_MPI
    MPI_Finalize() ;
 #endif
