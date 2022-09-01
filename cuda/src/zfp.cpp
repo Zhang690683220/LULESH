@@ -54,8 +54,6 @@ int zfp_compress(double* array, size_t nx, size_t ny, size_t nz) {
     stream_close(stream);
     cudaFree(buffer);
 
-    sleep(2);
-
     return status;
 }
 
@@ -137,6 +135,9 @@ int main(int argc, char** argv)
 
     if(rank == 0) {
         avg_get = (double*) malloc(sizeof(double)*input_step);
+        for(int i=0; i<input_step; i++) {
+            avg_get[i] = 0.0;
+        }
         log.open("zfp_dspaces.log", std::ofstream::out | std::ofstream::trunc);
         log << "step,get_ms" << std::endl;
     }
