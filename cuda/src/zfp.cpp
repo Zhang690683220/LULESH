@@ -9,6 +9,7 @@
 #include "dspaces.h"
 #include "timer.hpp"
 #include "CLI11.hpp"
+#include "unistd.h"
 
 int zfp_compress(double* array, size_t nx, size_t ny, size_t nz) {
     int status = 0;
@@ -52,6 +53,8 @@ int zfp_compress(double* array, size_t nx, size_t ny, size_t nz) {
     zfp_stream_close(zfp);
     stream_close(stream);
     cudaFree(buffer);
+
+    sleep(2);
 
     return status;
 }
@@ -136,7 +139,7 @@ int main(int argc, char** argv)
         log << "step,get_ms" << std::endl;
     }
 
-    for(int its=1; its<interval*10+1; its++) {
+    for(int its=1; its<interval+1; its++) {
         if(its%interval == 0) {
             double time_copy, time_transfer;
             Timer timer_get;
