@@ -9,7 +9,8 @@ add_executable(lulesh allocator.cu lulesh.cu lulesh-comms.cu lulesh-comms-gpu.cu
 target_include_directories(lulesh PRIVATE ${INCLUDE_PATH})
 target_link_libraries(lulesh PUBLIC MPI::MPI_CXX DataSpaces::DataSpaces)
 
-add_executable(zfp_cuda_test zfp_test.cu)
+add_executable(zfp_cuda_test zfp_test.cpp generate_value.cu)
+set_target_properties(zfp_cuda_test PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 target_include_directories(zfp_cuda_test PRIVATE ${INCLUDE_PATH})
 target_link_libraries(zfp_cuda_test PUBLIC MPI::MPI_CXX ZFP::zfp)
 
