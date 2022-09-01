@@ -5,7 +5,7 @@
 
 int zfp_compress(double* array, size_t nx, size_t ny, size_t nz) {
     int status = 0;
-    double rate = 8.0
+    double rate = 8.0;
     zfp_type type;     /* array scalar type */
     zfp_field* field;  /* array meta data */
     zfp_stream* zfp;   /* compressed stream */
@@ -32,7 +32,7 @@ int zfp_compress(double* array, size_t nx, size_t ny, size_t nz) {
     zfp_stream_set_bit_stream(zfp, stream);
     zfp_stream_rewind(zfp);
 
-    if (zfp_stream_set_execution(stream, zfp_exec_cuda)) {
+    if (zfp_stream_set_execution(zfp, zfp_exec_cuda)) {
         zfpsize = zfp_compress(stream, field);
         if (!zfpsize) {
             fprintf(stderr, "compression failed\n");
@@ -142,7 +142,7 @@ int main(int argc, char** argv)
     free(ub);
 
     dspaces_fini(ndcl);
-    
+
     MPI_Finalize();
 
     return 0;
