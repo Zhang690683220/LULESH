@@ -139,7 +139,7 @@ int main(int argc, char** argv)
         log << "step,get_ms" << std::endl;
     }
 
-    for(int its=1; its<interval+1; its++) {
+    for(int its=1; its<interval*input_step+1; its++) {
         if(its%interval == 0) {
             double time_copy, time_transfer;
             Timer timer_get;
