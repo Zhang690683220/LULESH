@@ -4888,7 +4888,7 @@ int main(int argc, char *argv[])
 	if(myRank == 0) {
 		free(avg_put);
 		total_avg /= output_step;
-		log << "Total" << "," << total_avg << std::endl;
+		log << "Average" << "," << total_avg << std::endl;
 		log.close();
 		std::cout<<"Writer sending kill signal to server."<<std::endl;
 		dspaces_kill(dspaces_client);

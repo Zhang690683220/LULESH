@@ -1,7 +1,14 @@
 #include <stdint.h>
 #include <stdlib.h>
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <cuda.h>
+#include <cuda_runtime.h>
 #include "zfp.h"
 #include "dspaces.h"
+#include "timer.hpp"
+#include "CLI11.hpp"
 
 int zfp_compress(double* array, size_t nx, size_t ny, size_t nz) {
     int status = 0;
@@ -33,7 +40,7 @@ int zfp_compress(double* array, size_t nx, size_t ny, size_t nz) {
     zfp_stream_rewind(zfp);
 
     if (zfp_stream_set_execution(zfp, zfp_exec_cuda)) {
-        zfpsize = zfp_compress(stream, field);
+        zfpsize = zfp_compress(zfp, field);
         if (!zfpsize) {
             fprintf(stderr, "compression failed\n");
             status = -1;
@@ -56,6 +63,7 @@ int main(int argc, char** argv)
     std::vector<int> np;
     std::vector<uint64_t> sp;
     int ndims = 3;
+    int input_step = 10;
     int interval = 1;
     bool terminate = false;
     app.add_option("--np", np, "the number of processes in the ith dimension. The product of np[0],"
@@ -86,7 +94,7 @@ int main(int argc, char** argv)
 
     if(npapp != nprocs) {
         std::cerr<<"Product of np[i] args must equal number of MPI processes!"<<std::endl;
-        print_usage();
+        //print_usage();
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
@@ -113,22 +121,51 @@ int main(int argc, char** argv)
         ub[i] = off[i] + sp[i] - 1;
     }
 
-    double *d_energy, *d_pressure, *d_mass
+    double *d_energy, *d_pressure, *d_mass;
     cudaMalloc((void**) &d_energy, sizeof(double)*grid_size);
     cudaMalloc((void**) &d_pressure, sizeof(double)*grid_size);
     cudaMalloc((void**) &d_mass, sizeof(double)*grid_size);
 
+    std::ofstream log;
+    double* avg_get = nullptr;
+    double total_avg = 0;
+
+    if(rank == 0) {
+        avg_get = (double*) malloc(sizeof(double)*input_step);
+        log.open("zfp_dspaces.log", std::ofstream::out | std::ofstream::trunc);
+        log << "step,get_ms" << std::endl;
+    }
+
     for(int its=1; its<interval*10+1; its++) {
         if(its%interval == 0) {
             double time_copy, time_transfer;
-            dspaces_cuda_get(ndcl, "energy", its, sizeof(double), 3, lb, ub, d_energy, -1,
+            Timer timer_get;
+            timer_get.start();
+            dspaces_cuda_get(dspaces_client, "energy", its, sizeof(double), 3, lb, ub, d_energy, -1,
                              &time_transfer, &time_copy);
-            dspaces_cuda_get(ndcl, "pressure", its, sizeof(double), 3, lb, ub, d_pressure, -1,
+            dspaces_cuda_get(dspaces_client, "pressure", its, sizeof(double), 3, lb, ub, d_pressure, -1,
                              &time_transfer, &time_copy);
-            dspaces_cuda_get(ndcl, "mass", its, sizeof(double), 3, lb, ub, d_mass, -1,
+            dspaces_cuda_get(dspaces_client, "mass", its, sizeof(double), 3, lb, ub, d_mass, -1,
                              &time_transfer, &time_copy);
+            double time_get = timer_get.stop();
 
             zfp_compress(d_energy, sp[0], sp[1], sp[2]);
+
+            double *avg_time_get = nullptr;
+            if(rank == 0) {
+                avg_time_get = (double*) malloc(sizeof(double)*nprocs);
+            }
+            MPI_Gather(&time_get, 1, MPI_DOUBLE, avg_time_get, 1, MPI_DOUBLE, 0, gcomm);
+
+            if(rank == 0) {
+                for(int i=0; i<nprocs; i++) {
+                    avg_get[its-1] += avg_time_get[i];
+                }
+                avg_get[its-1] /= nprocs;
+                log << its << "," << avg_get[its-1] << std::endl;
+                total_avg += avg_get[its-1];
+                free(avg_time_get);
+            }
             
         }
     }
@@ -137,11 +174,15 @@ int main(int argc, char** argv)
     cudaFree(d_pressure);
     cudaFree(d_mass);
 
-    free(off);
-    free(lb);
-    free(ub);
+    if(rank == 0) {
+        total_avg /= input_step;
+        log << "Average" << "," << total_avg << std::endl;
+        log.close();
+        std::cout<<"Writer sending kill signal to server."<<std::endl;
+        dspaces_kill(dspaces_client);
+    }
 
-    dspaces_fini(ndcl);
+    dspaces_fini(dspaces_client);
 
     MPI_Finalize();
 
