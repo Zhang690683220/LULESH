@@ -4805,6 +4805,9 @@ int main(int argc, char *argv[])
 
 	if(myRank == 0) {
 		avg_put = (double*) malloc(sizeof(double)*output_step);
+		for(int i=0; i<output_step; i++) {
+			avg_put[i] = 0.0;
+		}
 		log.open("lulesh_dspaces.log", std::ofstream::out | std::ofstream::trunc);
 		log << "step,put_ms" << std::endl;
 }

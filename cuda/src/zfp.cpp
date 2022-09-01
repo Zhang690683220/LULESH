@@ -9,7 +9,6 @@
 #include "dspaces.h"
 #include "timer.hpp"
 #include "CLI11.hpp"
-#include "unistd.h"
 
 int zfp_compress(double* array, size_t nx, size_t ny, size_t nz) {
     int status = 0;
