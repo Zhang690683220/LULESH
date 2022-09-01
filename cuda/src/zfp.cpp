@@ -133,6 +133,8 @@ int main(int argc, char** argv)
     double* avg_get = nullptr;
     double total_avg = 0;
 
+    int input_count = 0;
+
     if(rank == 0) {
         avg_get = (double*) malloc(sizeof(double)*input_step);
         log.open("zfp_dspaces.log", std::ofstream::out | std::ofstream::trunc);
@@ -151,6 +153,7 @@ int main(int argc, char** argv)
             dspaces_cuda_get(dspaces_client, "mass", its, sizeof(double), 3, lb, ub, d_mass, -1,
                              &time_transfer, &time_copy);
             double time_get = timer_get.stop();
+            input_count ++;
 
             zfp_compress(d_energy, sp[0], sp[1], sp[2]);
 
@@ -162,11 +165,11 @@ int main(int argc, char** argv)
 
             if(rank == 0) {
                 for(int i=0; i<nprocs; i++) {
-                    avg_get[its-1] += avg_time_get[i];
+                    avg_get[input_count-1] += avg_time_get[i];
                 }
-                avg_get[its-1] /= nprocs;
-                log << its << "," << avg_get[its-1] << std::endl;
-                total_avg += avg_get[its-1];
+                avg_get[input_count-1] /= nprocs;
+                log << its << "," << avg_get[input_count-1] << std::endl;
+                total_avg += avg_get[input_count-1];
                 free(avg_time_get);
             }
             
