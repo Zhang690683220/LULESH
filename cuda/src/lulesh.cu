@@ -4799,6 +4799,7 @@ int main(int argc, char *argv[])
 	fprintf(stdout, "Rank %d: lb = {%zu, %zu, %zu}, ub = {%zu, %zu, %zu}\n", myRank,
 											 lb[0], lb[1], lb[2], ub[0], ub[1], ub[2]);
 
+  double itime = 0;
 	std::ofstream log;
   double* avg_put = nullptr;
   double total_avg = 0;
@@ -4829,9 +4830,9 @@ int main(int argc, char *argv[])
 		if(its % output_interval == 0) {
 			Timer timer_put;
       timer_put.start();
-			dspaces_cuda_put(dspaces_client, "energy", its, sizeof(Real_t), 3, lb, ub, locDom->e.raw());
-			dspaces_cuda_put(dspaces_client, "pressure", its, sizeof(Real_t), 3, lb, ub, locDom->p.raw());
-			dspaces_cuda_put(dspaces_client, "mass", its, sizeof(Real_t), 3, lb, ub, locDom->elemMass.raw());
+			dspaces_cuda_put(dspaces_client, "energy", its, sizeof(Real_t), 3, lb, ub, locDom->e.raw(), &itime);
+			dspaces_cuda_put(dspaces_client, "pressure", its, sizeof(Real_t), 3, lb, ub, locDom->p.raw(), &itime);
+			dspaces_cuda_put(dspaces_client, "mass", its, sizeof(Real_t), 3, lb, ub, locDom->elemMass.raw(), &itime);
 			double time_put = timer_put.stop();
 			output_count++;
 
