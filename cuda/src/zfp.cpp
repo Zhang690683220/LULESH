@@ -63,7 +63,7 @@ int main(int argc, char** argv)
     std::vector<int> np;
     std::vector<uint64_t> sp;
     int ndims = 3;
-    int input_step = 10;
+    int input_step = 20;
     int interval = 1;
     bool terminate = false;
     app.add_option("--np", np, "the number of processes in the ith dimension. The product of np[0],"

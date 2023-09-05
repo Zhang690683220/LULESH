@@ -1,4 +1,4 @@
-find_package(MPI)
+find_package(MPI REQUIRED)
 if(MPI_FOUND)
     add_definitions(-DUSE_MPI)
 endif()

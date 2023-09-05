@@ -4676,7 +4676,7 @@ void VerifyAndWriteFinalOutput(Real_t elapsed_time,
    printf("Grind time (us/z/c)  = %10.8g (per dom)  (%10.8g overall)\n", grindTime1, grindTime2);
    printf("FOM                  = %10.8g (z/s)\n\n", 1000.0/grindTime2); // zones per second
 
-   bool write_solution_flag=true;
+   bool write_solution_flag=false;
    if (write_solution_flag) {
      write_solution(&locDom);
    }
@@ -4775,7 +4775,7 @@ int main(int argc, char *argv[])
       printf("Running until t=%f, Problem size=%d \n",locDom->stoptime,locDom->numElem);
   }
 
-  cudaProfilerStart();
+  // cudaProfilerStart();
 
 #if USE_MPI   
    double start = MPI_Wtime();
@@ -4785,7 +4785,7 @@ int main(int argc, char *argv[])
 #endif
 
 	int output_interval = 100;
-	int output_step = 10;
+	int output_step = 20;
 	int output_count = 0;
 	uint64_t lb[3] = {0};
 	uint64_t ub[3] = {0};
@@ -4820,7 +4820,7 @@ int main(int argc, char *argv[])
 
     LagrangeLeapFrog(locDom) ;
 
-    checkErrors(locDom,its,myRank);
+    // checkErrors(locDom,its,myRank);
 
     #if LULESH_SHOW_PROGRESS
      if (myRank == 0) 
@@ -4879,7 +4879,7 @@ int main(int argc, char *argv[])
    elapsed_timeG = elapsed_time;
 #endif
 
-  cudaProfilerStop();
+  // cudaProfilerStop();
 
   if (myRank == 0) 
     VerifyAndWriteFinalOutput(elapsed_timeG, *locDom, its, nx, numRanks, structured);
