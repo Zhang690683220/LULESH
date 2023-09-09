@@ -4828,11 +4828,12 @@ int main(int argc, char *argv[])
     #endif
     its++;
 		if(its % output_interval == 0) {
+      unsigned int dspaces_iter = its / output_interval;
 			Timer timer_put;
       timer_put.start();
-			dspaces_cuda_put(dspaces_client, "energy", its, sizeof(Real_t), 3, lb, ub, locDom->e.raw(), &itime);
-			dspaces_cuda_put(dspaces_client, "pressure", its, sizeof(Real_t), 3, lb, ub, locDom->p.raw(), &itime);
-			dspaces_cuda_put(dspaces_client, "mass", its, sizeof(Real_t), 3, lb, ub, locDom->elemMass.raw(), &itime);
+			dspaces_cuda_put(dspaces_client, "energy", dspaces_iter, sizeof(Real_t), 3, lb, ub, locDom->e.raw(), &itime);
+			dspaces_cuda_put(dspaces_client, "pressure", dspaces_iter, sizeof(Real_t), 3, lb, ub, locDom->p.raw(), &itime);
+			dspaces_cuda_put(dspaces_client, "mass", dspaces_iter, sizeof(Real_t), 3, lb, ub, locDom->elemMass.raw(), &itime);
 			double time_put = timer_put.stop();
 			output_count++;
 

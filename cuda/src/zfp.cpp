@@ -143,6 +143,7 @@ int main(int argc, char** argv)
 
     for(int its=1; its<interval*input_step+1; its++) {
         if(its%interval == 0) {
+            unsigned int dspaces_iter = its / interval;
             double time_copy, time_transfer;
             Timer timer_get;
             timer_get.start();
