@@ -147,11 +147,11 @@ int main(int argc, char** argv)
             double time_copy, time_transfer;
             Timer timer_get;
             timer_get.start();
-            dspaces_cuda_get(dspaces_client, "energy", its, sizeof(double), 3, lb, ub, d_energy, -1,
+            dspaces_cuda_get(dspaces_client, "energy", dspaces_iter, sizeof(double), 3, lb, ub, d_energy, -1,
                              &time_transfer, &time_copy);
-            dspaces_cuda_get(dspaces_client, "pressure", its, sizeof(double), 3, lb, ub, d_pressure, -1,
+            dspaces_cuda_get(dspaces_client, "pressure", dspaces_iter, sizeof(double), 3, lb, ub, d_pressure, -1,
                              &time_transfer, &time_copy);
-            dspaces_cuda_get(dspaces_client, "mass", its, sizeof(double), 3, lb, ub, d_mass, -1,
+            dspaces_cuda_get(dspaces_client, "mass", dspaces_iter, sizeof(double), 3, lb, ub, d_mass, -1,
                              &time_transfer, &time_copy);
             double time_get = timer_get.stop();
             input_count ++;
